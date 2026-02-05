@@ -1,7 +1,6 @@
 package com.casmanny.librarymanagementsystem.domain;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -35,11 +34,16 @@ public class Genre {
     @Column(nullable = false)
     private Boolean active = true;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_genre_id")
     private Genre parentGenre;
 
-    @OneToMany
-    private List<Genre> subGenres= new ArrayList<>();
+    @OneToMany(
+            mappedBy = "parentGenre",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<Genre> subGenres = new ArrayList<>();
 
     @OneToMany(mappedBy = "genre", cascade = CascadeType.PERSIST)
     private List<Book> books = new ArrayList<>();
@@ -49,5 +53,4 @@ public class Genre {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
-
 }
