@@ -1,0 +1,46 @@
+package com.casmanny.librarymanagementsystem.repository;
+
+import com.casmanny.librarymanagementsystem.domain.Book;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.util.Optional;
+
+public interface BookRepository extends JpaRepository<Book, Long> {
+    Optional<Book> findByIsbn(String isbn);
+    boolean existsByIsbn(String isbn);
+    @Query("""
+    SELECT b FROM Book b
+    WHERE b.active = true
+      AND (
+            :search IS NULL
+            OR LOWER(b.title) LIKE LOWER(CONCAT('%', :search, '%'))
+            OR LOWER(b.author) LIKE LOWER(CONCAT('%', :search, '%'))
+            OR LOWER(b.isbn) LIKE LOWER(CONCAT('%', :search, '%'))
+          )
+      AND (
+            :genreId IS NULL
+            OR b.genre.id = :genreId
+          )
+      AND (
+            :availableOnly = false
+            OR b.availableCopies > 0
+          )
+    """)
+    Page<Book> searchBooksWithFilters(
+            @Param("search") String searchTerm,
+            @Param("genreId") Long genreId,
+            @Param("availableOnly") boolean availableOnly,
+            Pageable pageable
+    );
+    long countByActiveTrue();
+    @Query("""
+            SELECT COUNT(b) FROM Book b
+            WHERE b.availableCopies > 0 AND b.active = true
+            """)
+    long countAvailableBooks();
+
+}
